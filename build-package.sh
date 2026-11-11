@@ -714,6 +714,33 @@ for (( i=0; i < ${#PACKAGE_LIST[@]}; i++ )); do
 		if [[ "$TERMUX_PKG_NAME" == "apt-ftparchive" || "$TERMUX_PKG_NAME" == "apt-transport-tor" ]]; then
 			TERMUX_PKG_NAME="apt"
 		fi
+
+		# If building 'apt', fetch pre-built files from gh-pages root instead of building from source
+		if [[ "$TERMUX_PKG_NAME" == "apt" ]]; then
+			echo "Checking for pre-built 'apt' packages on gh-pages..."
+			mkdir -p "${TERMUX_OUTPUT_DIR:-output}"
+			
+			FETCHED_SUCCESS=false
+			if command -v gh &> /dev/null && [[ -n "${GITHUB_REPOSITORY:-}" ]]; then
+				DEB_URLS=$(gh api "repos/${GITHUB_REPOSITORY}/contents?ref=gh-pages" --jq '.[] | select(.name | startswith("apt") and endswith(".deb")) | .download_url' 2>/dev/null || true)
+				for url in $DEB_URLS; do
+					filename=$(basename "$url")
+					echo "Downloading pre-built package: $filename"
+					if curl -sL -H "Authorization: Bearer ${GITHUB_TOKEN:-}" -o "${TERMUX_OUTPUT_DIR:-output}/$filename"; then
+						FETCHED_SUCCESS=true
+					fi
+				done
+			fi
+
+			if [[ "$FETCHED_SUCCESS" == "true" ]] && ls "${TERMUX_OUTPUT_DIR:-output}"/apt*.deb 1>/dev/null 2>&1; then
+				echo "Successfully fetched pre-built 'apt' packages. Skipping source build."
+				termux_add_package_to_built_packages_list "apt"
+				continue
+			else
+				echo "Pre-built 'apt' packages not found or download failed. Proceeding with source build..."
+			fi
+		fi
+		
 		
 		TERMUX_PKG_BUILDER_DIR=""
 		if [[ ${PACKAGE_LIST[i]} == *"/"* ]]; then
