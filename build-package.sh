@@ -711,9 +711,10 @@ for (( i=0; i < ${#PACKAGE_LIST[@]}; i++ )); do
 
 		# Check the package to build:
 		TERMUX_PKG_NAME="$(basename "${PACKAGE_LIST[i]}")"
-		if [[ "$TERMUX_PKG_NAME" == "apt-ftparchive" ]]; then
+		if [[ "$TERMUX_PKG_NAME" == "apt-ftparchive" || "$TERMUX_PKG_NAME" == "apt-transport-tor" ]]; then
 			TERMUX_PKG_NAME="apt"
 		fi
+		
 		TERMUX_PKG_BUILDER_DIR=""
 		if [[ ${PACKAGE_LIST[i]} == *"/"* ]]; then
 			# Path to directory which may be outside this repo:
