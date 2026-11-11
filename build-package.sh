@@ -584,7 +584,7 @@ while (( $# )); do
 		-d) export TERMUX_DEBUG_BUILD=true;;
 		-D) TERMUX_IS_DISABLED=true;;
 		-f) TERMUX_FORCE_BUILD=true;;
-		-F) TERMUX_FORCE_BUILD_DEPENDENCIES=true && TERMUX_FORCE_BUILD=true;;
+				-F) TERMUX_FORCE_BUILD_DEPENDENCIES=true && TERMUX_FORCE_BUILD=true;;
 		-i)
 			if [[ "$TERMUX_ON_DEVICE_BUILD" == "true" ]]; then
 				termux_error_exit "./build-package.sh: option '-i' is not available for on-device builds"
@@ -631,7 +631,6 @@ while (( $# )); do
 	shift 1
 done
 unset -f _show_usage
-
 # Dependencies should be used from repo only if they are built for
 # same package name.
 if [[ "$TERMUX_REPO_APP__PACKAGE_NAME" != "$TERMUX_APP_PACKAGE" ]]; then
@@ -705,15 +704,16 @@ for (( i=0; i < ${#PACKAGE_LIST[@]}; i++ )); do
 			[[ -n "${TERMUX_PACKAGE_FORMAT:-}" ]] && _SELF_ARGS+=("--format" "$TERMUX_PACKAGE_FORMAT")
 			[[ -n "${TERMUX_PACKAGE_LIBRARY:-}" ]] && _SELF_ARGS+=("--library" "$TERMUX_PACKAGE_LIBRARY")
 
-			for arch in 'aarch64' 'arm' 'i686' 'x86_64'; do
-				env TERMUX_ARCH="$arch" TERMUX_BUILD_IGNORE_LOCK=true ./build-package.sh \
-					"${_SELF_ARGS[@]}" "${PACKAGE_LIST[i]}"
-			done
+			env TERMUX_ARCH="aarch64" TERMUX_BUILD_IGNORE_LOCK=true ./build-package.sh \
+				"${_SELF_ARGS[@]}" "${PACKAGE_LIST[i]}"
 			exit
 		fi
 
 		# Check the package to build:
 		TERMUX_PKG_NAME="$(basename "${PACKAGE_LIST[i]}")"
+		if [[ "$TERMUX_PKG_NAME" == "apt-ftparchive" ]]; then
+			TERMUX_PKG_NAME="apt"
+		fi
 		TERMUX_PKG_BUILDER_DIR=""
 		if [[ ${PACKAGE_LIST[i]} == *"/"* ]]; then
 			# Path to directory which may be outside this repo:
@@ -826,3 +826,5 @@ if (( ! TERMUX_BUILD_PACKAGE_CALL_DEPTH )); then
 	rm "$TERMUX_BUILD_PACKAGE_CALL_BUILT_PACKAGES_LIST_FILE_PATH"
 	rm "$TERMUX_BUILD_PACKAGE_CALL_BUILDING_PACKAGES_LIST_FILE_PATH"
 fi
+
+		
