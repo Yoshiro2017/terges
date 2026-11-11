@@ -29,7 +29,7 @@ permissions: {} # none
 
 concurrency:
   # if this is a PR event, group = "pr-<number>", otherwise group = run_id so it never collides with other runs
-  group: ${{ case(github.event_name == 'pull_request', format('pr-{0}', github.event.pull_request.number), github.run_id) }}
+  group: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.run_id }}
   # only cancel in-progress when it’s a PR
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
@@ -394,7 +394,7 @@ jobs:
   upload-test:
     permissions:
       contents: read
-    if: github.repository == 'termux/termux-packages' && github.ref != 'refs/heads/master'
+    if: github.ref != 'refs/heads/master'
     needs: build
     runs-on: ubuntu-26.04
     steps:
@@ -430,7 +430,7 @@ jobs:
       queue: max
     permissions:
       contents: read
-    if: github.repository == 'termux/termux-packages' && github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master'
     needs: build
     runs-on: ubuntu-26.04
     steps:
@@ -473,7 +473,7 @@ jobs:
 
             # Publishing repository changes.
             if [ "$uploaded_files" = "true" ]; then
-              if ! aptly_add_to_repo; then
+              if ! aptly_publish_repo; then
                 exit 1
               fi
 
@@ -483,15 +483,4 @@ jobs:
               # Final part to make changes appear in web root.
               if ! aptly_publish_repo; then
                 exit 1
-              fi
-
-              # Publish to staging repo if we haven't already
-              if [[ "$REPOSITORY_DISTRIBUTION" != "staging" ]]; then
-                REPOSITORY_DISTRIBUTION=staging
-                if ! aptly_publish_repo; then
-                  exit 1
-                fi
-              fi
-            fi
-          fi
-        done
+              
