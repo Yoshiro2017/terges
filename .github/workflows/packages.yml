@@ -247,13 +247,21 @@ jobs:
         for repo_path in $(jq --raw-output 'del(.pkg_format) | keys | .[]' repo.json); do
           repo=$(jq --raw-output '.["'${repo_path}'"].name' repo.json)
           if [ -f "./built_${repo}_packages.txt" ]; then
-            package_recipes+=($(cat "./built_${repo}_packages.txt" | repo_path="${repo_path}" awk '{print ENVIRON["repo_path"]"/"$1"/build.sh"}'))
+            while read -r pkg; do
+              # Only add to lint list if build.sh actually exists
+              if [ -f "${repo_path}/${pkg}/build.sh" ]; then
+                package_recipes+=("${repo_path}/${pkg}/build.sh")
+              fi
+            done < "./built_${repo}_packages.txt"
           fi
         done
 
         if [[ "${#package_recipes[@]}" -gt 0 ]]; then
           ./scripts/lint-packages.sh "${package_recipes[@]}"
+        else
+          echo "No package recipes with build.sh found to lint. Skipping."
         fi
+        
 
     - name: Enable zram
       if: ${{ steps.build-info.outputs.skip-building != 'true' }}
