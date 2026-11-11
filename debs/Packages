@@ -1,0 +1,47 @@
+Package: apt
+Version: 2.8.4
+Architecture: aarch64
+Essential: yes
+Maintainer: @termux
+Installed-Size: 4064
+Depends: coreutils, dpkg, findutils, gpgv, grep, libandroid-glob, libbz2, libc++ (>= 30), libiconv, libgcrypt, libgnutls, liblz4, liblzma, sed, termux-keyring, termux-licenses, xxhash, zlib, zstd
+Suggests: gnupg
+Conflicts: apt-transport-https, libapt-pkg, unstable-repo, game-repo, science-repo
+Replaces: apt-transport-https, libapt-pkg, unstable-repo, game-repo, science-repo
+Provides: unstable-repo, game-repo, science-repo
+Filename: ./apt_2.8.4_aarch64.deb
+Size: 1044492
+MD5sum: 6e596f888060b56d32d05490097c9939
+SHA1: 2e80e647b2d2908fcdb63e022b4d32e280894bfb
+SHA256: 49308843196ec0d774885c023749d36a79d93185721feb2427078ed5fbd26d5f
+Homepage: https://packages.debian.org/apt
+Description: Front-end for the dpkg package manager
+
+Package: apt-ftparchive
+Version: 2.8.4
+Architecture: aarch64
+Maintainer: @termux
+Installed-Size: 316
+Depends: libdb, apt (= 2.8.4)
+Filename: ./apt-ftparchive_2.8.4_aarch64.deb
+Size: 95556
+MD5sum: 61dc988bbd54707673856664afd3461f
+SHA1: 7148b611f367429d7903f2b608b67394625ec690
+SHA256: 880333b471be9372d864a6136b48cd95740444ec0e389db2ccce3a57cfd04b21
+Homepage: https://packages.debian.org/apt
+Description: apt-ftparchive is the command line tool that generates the index files that APT uses to access a distribution source
+
+Package: apt-transport-tor
+Version: 2.8.4
+Architecture: all
+Maintainer: @termux
+Installed-Size: 44
+Depends: tor, apt (= 2.8.4)
+Filename: ./apt-transport-tor_2.8.4_all.deb
+Size: 928
+MD5sum: d59532a8df7704c76d45892202f40d05
+SHA1: 0b8542a3334fff5a739120ffa1ead8556e7e156a
+SHA256: be172541cb10c4679c635851ec3dce802c85c4cdd0b3d3a31d8d1e25cdc16c72
+Homepage: https://packages.debian.org/apt
+Description: APT transport for anonymous package downloads via Tor
+

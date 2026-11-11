@@ -1,0 +1,18 @@
+Package: bash
+Version: 5.3.20
+Architecture: aarch64
+Essential: yes
+Maintainer: Joshua Kahn <tom@termux.dev>
+Installed-Size: 4736
+Depends: libandroid-support, libiconv, readline (>= 8.3), termux-tools
+Recommends: command-not-found, bash-completion
+Breaks: bash-dev
+Replaces: bash-dev
+Filename: repo/pool/main/bash_aarch64_bash_5.3.20_aarch64.deb
+Size: 956852
+MD5sum: be63e290a226dacb721022eafbffe690
+SHA1: 650e2945b58694b3ceb4064e30c524bf26db2c39
+SHA256: 26b5b3ab5b0ac0e3b372ac1e7ddd89270519c1eb25b88fe4175485c2de8086b2
+Homepage: https://www.gnu.org/software/bash/
+Description: A sh-compatible shell that incorporates useful features from the Korn shell (ksh) and C shell (csh)
+

@@ -1,0 +1,18 @@
+Package: bash
+Version: 5.3.20
+Architecture: x86_64
+Essential: yes
+Maintainer: Joshua Kahn <tom@termux.dev>
+Installed-Size: 4700
+Depends: libandroid-support, libiconv, readline (>= 8.3), termux-tools
+Recommends: command-not-found, bash-completion
+Breaks: bash-dev
+Replaces: bash-dev
+Filename: repo/pool/main/bash_x86_64_bash_5.3.20_x86_64.deb
+Size: 989716
+MD5sum: 55fe164d7a389188665a2c5a532cf229
+SHA1: 59e4af5380d6ee117104499c512f523152f314fe
+SHA256: f8c984e68269df3df2efae9f2835a9d9af381a8f80d08b34160772bc16cd0910
+Homepage: https://www.gnu.org/software/bash/
+Description: A sh-compatible shell that incorporates useful features from the Korn shell (ksh) and C shell (csh)
+

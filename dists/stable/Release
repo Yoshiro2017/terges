@@ -1,0 +1,26 @@
+Origin: Termux-Custom
+Label: Custom Termux Repository
+Suite: stable
+Codename: stable
+Architectures: aarch64 arm i686 x86_64
+Components: main
+Description: APT repository containing custom build apt and pre-built bash packages.
+Date: Wed, 11 Nov 2026 21:38:51 +0000
+MD5Sum:
+ 82feb1f2d43dbc9719395606969293be      678 main/binary-aarch64/Packages
+ eaf01f20be3c5690d5c9fca3a88603dd      492 main/binary-aarch64/Packages.gz
+ dd8c4a8810f5d1f786ee552e6ca2e85f      666 main/binary-arm/Packages
+ 2b47c223f698becafee2653f1e48e41f      492 main/binary-arm/Packages.gz
+ 4bd9b5ff1d07a9d9413e211a5af2bfee      669 main/binary-i686/Packages
+ e5713b8a8b85eaa901216806ca3dfaed      493 main/binary-i686/Packages.gz
+ df75c3f864dc4578e8b6d9f35ea49db5      675 main/binary-x86_64/Packages
+ fb5698b6d9766118a283c5bca55360bc      497 main/binary-x86_64/Packages.gz
+SHA256:
+ 8a9b1bf2ecc2410d6a35649a59d0a6b9f1d92947f0d3a48621a24f40e18210c6      678 main/binary-aarch64/Packages
+ aeb945fd4d7511cf6cf0260a9f4266f084378c59c06ca8dfdb564e3f212128c8      492 main/binary-aarch64/Packages.gz
+ 225492fce5f99f800cf33851430f49bd8e7cdf7c97208941ef9f934b77b3f122      666 main/binary-arm/Packages
+ e16b961bb7da9eac7625a990ee7ca754834cde1c88444843ed85affad0cbb33c      492 main/binary-arm/Packages.gz
+ 91f0105dc3fe02137cfb1b9f47d327146c595b401f9bcc2f282cc3337491d965      669 main/binary-i686/Packages
+ 63153536def9292ff7bf4084cbed03160483dea893bf6a978c66800451a7a6bd      493 main/binary-i686/Packages.gz
+ f61d086c8f3b819ab3d2fe48608a349a4a7116737f68752cc7a16022fcdaa8e4      675 main/binary-x86_64/Packages
+ 547612d617c9f62eac637e906324134d0cba878648483e95fb3b7357d3228b27      497 main/binary-x86_64/Packages.gz

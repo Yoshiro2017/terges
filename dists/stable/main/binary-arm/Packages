@@ -1,0 +1,18 @@
+Package: bash
+Version: 5.3.20
+Architecture: arm
+Essential: yes
+Maintainer: Joshua Kahn <tom@termux.dev>
+Installed-Size: 4356
+Depends: libandroid-support, libiconv, readline (>= 8.3), termux-tools
+Recommends: command-not-found, bash-completion
+Breaks: bash-dev
+Replaces: bash-dev
+Filename: repo/pool/main/bash_arm_bash_5.3.20_arm.deb
+Size: 929476
+MD5sum: 62b3868b065ea176689a9f97fdf2b06d
+SHA1: 3fa584c07fc2ffd9e11ffa59c77eec0c207e9666
+SHA256: ccd12672eb2d6f2c99d8c6340919b7145aa12a18d8a8ffbe794683227c889e61
+Homepage: https://www.gnu.org/software/bash/
+Description: A sh-compatible shell that incorporates useful features from the Korn shell (ksh) and C shell (csh)
+
