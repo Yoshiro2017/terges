@@ -4,8 +4,25 @@ on:
   push:
     paths:
       - 'packages.yml'
-      - '.github/workflows/packages.yml'
+      - '.github/workflows/build-php-libsodium.yml'
   workflow_dispatch:
+    inputs:
+      libsodium_version:
+        description: "libsodium version"
+        required: true
+        default: "1.0.22"
+      libsodium_url:
+        description: "libsodium tar.gz URL"
+        required: true
+        default: "https://github.com/jedisct1/libsodium/releases/download/1.0.22-RELEASE/libsodium-1.0.22.tar.gz"
+      php_version:
+        description: "PHP version"
+        required: true
+        default: "8.5.12"
+      php_url:
+        description: "PHP tar.gz URL"
+        required: true
+        default: "https://www.php.net/distributions/php-8.5.12.tar.gz"
 
 permissions:
   contents: read
@@ -40,34 +57,23 @@ jobs:
         with:
           ndk-version: r27c
 
-      - name: Install Parse Tooling
-        run: sudo apt-get update && sudo apt-get install -y yq
-
-      - name: Read Packages Configuration
-        id: config
-        run: |
-          python3 -c "
-          import yaml
-          with open('packages.yml') as f:
-              data = yaml.safe_load(f)
-          with open('$GITHUB_OUTPUT', 'a') as out:
-              out.write(f'LIBSODIUM_VERSION={data[\"libsodium\"][\"version\"]}\n')
-              out.write(f'LIBSODIUM_URL={data[\"libsodium\"][\"url\"]}\n')
-              out.write(f'PHP_VERSION={data[\"php\"][\"version\"]}\n')
-              out.write(f'PHP_URL={data[\"php\"][\"url\"]}\n')
-          "
-          
-          
       - name: Compile and Package libsodium
         env:
           NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
           PREFIX: /data/data/com.termux/files/usr
-          VERSION: ${{ steps.config.outputs.LIBSODIUM_VERSION }}
-          URL: ${{ steps.config.outputs.LIBSODIUM_URL }}
           ARCH: ${{ matrix.target_arch }}
           NDK_TRIPLE: ${{ matrix.ndk_triple }}
           API_LEVEL: ${{ matrix.api_level }}
         run: |
+          # Use workflow input if available, otherwise read from packages.yml or default
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            export VERSION="${{ github.event.inputs.libsodium_version }}"
+            export URL="${{ github.event.inputs.libsodium_url }}"
+          else
+            export VERSION=$(awk '/^libsodium:/ {flag=1} flag && /version:/ {print $2; exit}' packages.yml | tr -d '"')
+            export URL=$(awk '/^libsodium:/ {flag=1} flag && /url:/ {print $2; exit}' packages.yml | tr -d '"')
+          fi
+
           TOOLCHAIN="$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64"
           export AR="$TOOLCHAIN/bin/llvm-ar"
           export CC="$TOOLCHAIN/bin/${NDK_TRIPLE}${API_LEVEL}-clang"
@@ -112,12 +118,18 @@ jobs:
         env:
           NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
           PREFIX: /data/data/com.termux/files/usr
-          VERSION: ${{ steps.config.outputs.PHP_VERSION }}
-          URL: ${{ steps.config.outputs.PHP_URL }}
           ARCH: ${{ matrix.target_arch }}
           NDK_TRIPLE: ${{ matrix.ndk_triple }}
           API_LEVEL: ${{ matrix.api_level }}
         run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            export VERSION="${{ github.event.inputs.php_version }}"
+            export URL="${{ github.event.inputs.php_url }}"
+          else
+            export VERSION=$(awk '/^php:/ {flag=1} flag && /version:/ {print $2; exit}' packages.yml | tr -d '"')
+            export URL=$(awk '/^php:/ {flag=1} flag && /url:/ {print $2; exit}' packages.yml | tr -d '"')
+          fi
+
           TOOLCHAIN="$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64"
           export AR="$TOOLCHAIN/bin/llvm-ar"
           export CC="$TOOLCHAIN/bin/${NDK_TRIPLE}${API_LEVEL}-clang"
