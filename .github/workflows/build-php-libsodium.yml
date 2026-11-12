@@ -46,11 +46,18 @@ jobs:
       - name: Read Packages Configuration
         id: config
         run: |
-          echo "LIBSODIUM_VERSION=$(yq eval '.libsodium.version' packages.yml)" >> $GITHUB_OUTPUT
-          echo "LIBSODIUM_URL=$(yq eval '.libsodium.url' packages.yml)" >> $GITHUB_OUTPUT
-          echo "PHP_VERSION=$(yq eval '.php.version' packages.yml)" >> $GITHUB_OUTPUT
-          echo "PHP_URL=$(yq eval '.php.url' packages.yml)" >> $GITHUB_OUTPUT
-
+          python3 -c "
+          import yaml
+          with open('packages.yml') as f:
+              data = yaml.safe_load(f)
+          with open('$GITHUB_OUTPUT', 'a') as out:
+              out.write(f'LIBSODIUM_VERSION={data[\"libsodium\"][\"version\"]}\n')
+              out.write(f'LIBSODIUM_URL={data[\"libsodium\"][\"url\"]}\n')
+              out.write(f'PHP_VERSION={data[\"php\"][\"version\"]}\n')
+              out.write(f'PHP_URL={data[\"php\"][\"url\"]}\n')
+          "
+          
+          
       - name: Compile and Package libsodium
         env:
           NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
