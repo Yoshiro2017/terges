@@ -64,16 +64,9 @@ jobs:
           ARCH: ${{ matrix.target_arch }}
           NDK_TRIPLE: ${{ matrix.ndk_triple }}
           API_LEVEL: ${{ matrix.api_level }}
+          VERSION: ${{ github.event.inputs.libsodium_version || '1.0.22' }}
+          URL: ${{ github.event.inputs.libsodium_url || 'https://github.com/jedisct1/libsodium/releases/download/1.0.22-RELEASE/libsodium-1.0.22.tar.gz' }}
         run: |
-          # Use workflow input if available, otherwise read from packages.yml or default
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            export VERSION="${{ github.event.inputs.libsodium_version }}"
-            export URL="${{ github.event.inputs.libsodium_url }}"
-          else
-            export VERSION=$(awk '/^libsodium:/ {flag=1} flag && /version:/ {print $2; exit}' packages.yml | tr -d '"')
-            export URL=$(awk '/^libsodium:/ {flag=1} flag && /url:/ {print $2; exit}' packages.yml | tr -d '"')
-          fi
-
           TOOLCHAIN="$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64"
           export AR="$TOOLCHAIN/bin/llvm-ar"
           export CC="$TOOLCHAIN/bin/${NDK_TRIPLE}${API_LEVEL}-clang"
@@ -103,93 +96,4 @@ jobs:
           INSTALLED_SIZE=$(du -sk /tmp/libsodium_pkg | cut -f1)
           cat <<EOF > /tmp/libsodium_pkg/DEBIAN/control
           Package: libsodium
-          Version: ${VERSION}
-          Architecture: ${ARCH}
-          Maintainer: jedisct1
-          Installed-Size: ${INSTALLED_SIZE}
-          Homepage: https://libsodium.org
-          Description: Network communication, cryptography and signing library
-          EOF
-
-          dpkg-deb --build /tmp/libsodium_pkg "${GITHUB_WORKSPACE}/libsodium_${VERSION}_${ARCH}.deb"
-          cd ../..
-
-      - name: Compile and Package PHP
-        env:
-          NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
-          PREFIX: /data/data/com.termux/files/usr
-          ARCH: ${{ matrix.target_arch }}
-          NDK_TRIPLE: ${{ matrix.ndk_triple }}
-          API_LEVEL: ${{ matrix.api_level }}
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            export VERSION="${{ github.event.inputs.php_version }}"
-            export URL="${{ github.event.inputs.php_url }}"
-          else
-            export VERSION=$(awk '/^php:/ {flag=1} flag && /version:/ {print $2; exit}' packages.yml | tr -d '"')
-            export URL=$(awk '/^php:/ {flag=1} flag && /url:/ {print $2; exit}' packages.yml | tr -d '"')
-          fi
-
-          TOOLCHAIN="$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64"
-          export AR="$TOOLCHAIN/bin/llvm-ar"
-          export CC="$TOOLCHAIN/bin/${NDK_TRIPLE}${API_LEVEL}-clang"
-          export CXX="$TOOLCHAIN/bin/${NDK_TRIPLE}${API_LEVEL}-clang++"
-          export LD="$TOOLCHAIN/bin/ld"
-          export RANLIB="$TOOLCHAIN/bin/llvm-ranlib"
-          export STRIP="$TOOLCHAIN/bin/llvm-strip"
-          export PKG_CONFIG_PATH="/data/data/com.termux/files/usr/lib/pkgconfig"
-
-          cd src_cache
-          wget -q "$URL" -O php.tar.gz
-          tar -xzf php.tar.gz
-          cd php-*
-
-          ./buildconf --force
-          ./configure \
-            --host=${NDK_TRIPLE} \
-            --prefix=$PREFIX \
-            --with-config-file-path=$PREFIX/etc \
-            --with-libdir=lib \
-            --enable-option-checking=fatal \
-            --with-extdir=$PREFIX/php/ext \
-            --enable-calendar \
-            --enable-ctype \
-            --enable-dom \
-            --enable-fileinfo \
-            --with-iconv \
-            --enable-json \
-            --with-openssl \
-            --with-sodium=$PREFIX \
-            --enable-xml \
-            --enable-xmlreader \
-            --disable-cgi \
-            --enable-cli
-
-          make -j$(nproc)
-
-          mkdir -p /tmp/php_pkg/DEBIAN /tmp/php_pkg$PREFIX/php/ext
-          make INSTALL_ROOT=/tmp/php_pkg install
-          $STRIP /tmp/php_pkg$PREFIX/bin/* /tmp/php_pkg$PREFIX/php/ext/*.so || true
-
-          INSTALLED_SIZE=$(du -sk /tmp/php_pkg | cut -f1)
-          cat <<EOF > /tmp/php_pkg/DEBIAN/control
-          Package: php
-          Version: ${VERSION}
-          Architecture: ${ARCH}
-          Maintainer: The PHP Foundation
-          Installed-Size: ${INSTALLED_SIZE}
-          Depends: libsodium, zlib, libxml2, openssl
-          Description: Server-side, HTML-embedded scripting language
-          EOF
-
-          dpkg-deb --build /tmp/php_pkg "${GITHUB_WORKSPACE}/php_${VERSION}_${ARCH}.deb"
-          cd ../..
-
-      - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: debs-${{ matrix.target_arch }}
-          path: |
-            libsodium_*.deb
-            php_*.deb
-            
+          
