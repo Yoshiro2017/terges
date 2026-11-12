@@ -1,0 +1,176 @@
+name: Build Termkes Packages
+
+on:
+  push:
+    paths:
+      - 'packages.yml'
+      - '.github/workflows/packages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-26.04
+    strategy:
+      matrix:
+        include:
+          - target_arch: aarch64
+            ndk_triple: aarch64-linux-android
+            api_level: 24
+          - target_arch: arm
+            ndk_triple: armv7a-linux-androideabi
+            api_level: 24
+          - target_arch: x86_64
+            ndk_triple: x86_64-linux-android
+            api_level: 24
+          - target_arch: i686
+            ndk_triple: i686-linux-android
+            api_level: 24
+      fail-fast: false
+
+    steps:
+      - name: Clone Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: r27c
+
+      - name: Install Parse Tooling
+        run: sudo apt-get update && sudo apt-get install -y yq
+
+      - name: Read Packages Configuration
+        id: config
+        run: |
+          echo "LIBSODIUM_VERSION=$(yq eval '.libsodium.version' packages.yml)" >> $GITHUB_OUTPUT
+          echo "LIBSODIUM_URL=$(yq eval '.libsodium.url' packages.yml)" >> $GITHUB_OUTPUT
+          echo "PHP_VERSION=$(yq eval '.php.version' packages.yml)" >> $GITHUB_OUTPUT
+          echo "PHP_URL=$(yq eval '.php.url' packages.yml)" >> $GITHUB_OUTPUT
+
+      - name: Compile and Package libsodium
+        env:
+          NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+          PREFIX: /data/data/com.termux/files/usr
+          VERSION: ${{ steps.config.outputs.LIBSODIUM_VERSION }}
+          URL: ${{ steps.config.outputs.LIBSODIUM_URL }}
+          ARCH: ${{ matrix.target_arch }}
+          NDK_TRIPLE: ${{ matrix.ndk_triple }}
+          API_LEVEL: ${{ matrix.api_level }}
+        run: |
+          TOOLCHAIN="$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64"
+          export AR="$TOOLCHAIN/bin/llvm-ar"
+          export CC="$TOOLCHAIN/bin/${NDK_TRIPLE}${API_LEVEL}-clang"
+          export CXX="$TOOLCHAIN/bin/${NDK_TRIPLE}${API_LEVEL}-clang++"
+          export LD="$TOOLCHAIN/bin/ld"
+          export RANLIB="$TOOLCHAIN/bin/llvm-ranlib"
+          export STRIP="$TOOLCHAIN/bin/llvm-strip"
+
+          mkdir -p src_cache && cd src_cache
+          wget -q "$URL" -O libsodium.tar.gz
+          tar -xzf libsodium.tar.gz
+          cd libsodium-*
+
+          ./configure \
+            --host=${NDK_TRIPLE} \
+            --prefix=$PREFIX \
+            --disable-soname-versions \
+            --enable-shared \
+            --disable-static
+
+          make -j$(nproc)
+          
+          mkdir -p /tmp/libsodium_pkg/DEBIAN
+          make DESTDIR=/tmp/libsodium_pkg install
+          $STRIP /tmp/libsodium_pkg$PREFIX/lib/*.so || true
+
+          INSTALLED_SIZE=$(du -sk /tmp/libsodium_pkg | cut -f1)
+          cat <<EOF > /tmp/libsodium_pkg/DEBIAN/control
+          Package: libsodium
+          Version: ${VERSION}
+          Architecture: ${ARCH}
+          Maintainer: jedisct1
+          Installed-Size: ${INSTALLED_SIZE}
+          Homepage: https://libsodium.org
+          Description: Network communication, cryptography and signing library
+          EOF
+
+          dpkg-deb --build /tmp/libsodium_pkg "${GITHUB_WORKSPACE}/libsodium_${VERSION}_${ARCH}.deb"
+          cd ../..
+
+      - name: Compile and Package PHP
+        env:
+          NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+          PREFIX: /data/data/com.termux/files/usr
+          VERSION: ${{ steps.config.outputs.PHP_VERSION }}
+          URL: ${{ steps.config.outputs.PHP_URL }}
+          ARCH: ${{ matrix.target_arch }}
+          NDK_TRIPLE: ${{ matrix.ndk_triple }}
+          API_LEVEL: ${{ matrix.api_level }}
+        run: |
+          TOOLCHAIN="$NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64"
+          export AR="$TOOLCHAIN/bin/llvm-ar"
+          export CC="$TOOLCHAIN/bin/${NDK_TRIPLE}${API_LEVEL}-clang"
+          export CXX="$TOOLCHAIN/bin/${NDK_TRIPLE}${API_LEVEL}-clang++"
+          export LD="$TOOLCHAIN/bin/ld"
+          export RANLIB="$TOOLCHAIN/bin/llvm-ranlib"
+          export STRIP="$TOOLCHAIN/bin/llvm-strip"
+          export PKG_CONFIG_PATH="/data/data/com.termux/files/usr/lib/pkgconfig"
+
+          cd src_cache
+          wget -q "$URL" -O php.tar.gz
+          tar -xzf php.tar.gz
+          cd php-*
+
+          ./buildconf --force
+          ./configure \
+            --host=${NDK_TRIPLE} \
+            --prefix=$PREFIX \
+            --with-config-file-path=$PREFIX/etc \
+            --with-libdir=lib \
+            --enable-option-checking=fatal \
+            --with-extdir=$PREFIX/php/ext \
+            --enable-calendar \
+            --enable-ctype \
+            --enable-dom \
+            --enable-fileinfo \
+            --with-iconv \
+            --enable-json \
+            --with-openssl \
+            --with-sodium=$PREFIX \
+            --enable-xml \
+            --enable-xmlreader \
+            --disable-cgi \
+            --enable-cli
+
+          make -j$(nproc)
+
+          mkdir -p /tmp/php_pkg/DEBIAN /tmp/php_pkg$PREFIX/php/ext
+          make INSTALL_ROOT=/tmp/php_pkg install
+          $STRIP /tmp/php_pkg$PREFIX/bin/* /tmp/php_pkg$PREFIX/php/ext/*.so || true
+
+          INSTALLED_SIZE=$(du -sk /tmp/php_pkg | cut -f1)
+          cat <<EOF > /tmp/php_pkg/DEBIAN/control
+          Package: php
+          Version: ${VERSION}
+          Architecture: ${ARCH}
+          Maintainer: The PHP Foundation
+          Installed-Size: ${INSTALLED_SIZE}
+          Depends: libsodium, zlib, libxml2, openssl
+          Description: Server-side, HTML-embedded scripting language
+          EOF
+
+          dpkg-deb --build /tmp/php_pkg "${GITHUB_WORKSPACE}/php_${VERSION}_${ARCH}.deb"
+          cd ../..
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: debs-${{ matrix.target_arch }}
+          path: |
+            libsodium_*.deb
+            php_*.deb
+            
